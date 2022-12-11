@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 
+import * as simpleSync from "../../../lib/client";
+
 type AppState = number;
 
 function initialAppState(): AppState {
@@ -20,79 +22,22 @@ function applyAppUpdate(state: AppState, update: AppUpdate): AppState {
   }
 }
 
-type ClientState =
-    | {type: "connecting"}
-    | {type: "connected", appState: AppState, nextMessageIndex: number, socket: WebSocket}
-    | {type: "connection-error"}
-    | {type: "sync-error"};
-
 function webSocketUri() {
   const location = window.location;
   const webSocketProtocol = location.protocol === "https:" ? "wss" : "ws";
   return `${webSocketProtocol}://${location.host}/ws`;
 }
 
-function connect(onChange: (state: ClientState) => void) {
-  const uri = webSocketUri();
-  console.log(`Connecting to ${uri}`);
-  const socket = new WebSocket(uri);
-  let state: ClientState = {type: "connecting"};
-
-  function updateState(newState: ClientState) {
-    state = newState;
-    onChange(newState);
-  }
-
-  socket.onmessage = function (event) {
-    if (state.type === "connected") {
-      const message = JSON.parse(event.data);
-
-      const nextMessageIndex = state.nextMessageIndex;
-      if (message.index !== state.nextMessageIndex) {
-          updateState({type: "sync-error"});
-          socket.close();
-      } else {
-        const appUpdate = message.payload as AppUpdate;
-        console.log("App update received:", appUpdate);
-
-        updateState({
-          ...state,
-          appState: applyAppUpdate(state.appState, appUpdate),
-          nextMessageIndex: nextMessageIndex + 1,
-        });
-      }
-    }
-  };
-
-  socket.onerror = function() {
-    updateState({type: "connection-error"});
-  };
-
-  socket.onclose = function() {
-    updateState({type: "connection-error"});
-  };
-
-  socket.onopen = function() {
-    updateState({
-      type: "connected",
-      appState: initialAppState(),
-      nextMessageIndex: 0,
-      socket: socket,
-    });
-  };
-
-  return {
-    close: () => {
-      socket.close();
-    },
-  }
-}
-
 function Client() {
-  const [state, setState] = useState<ClientState>({type: "connecting"});
+  const [state, setState] = useState<simpleSync.ClientState<AppState>>({type: "connecting"});
 
   useEffect(() => {
-    const client = connect(state => setState(state));
+    const client = simpleSync.connect({
+      applyAppUpdate,
+      initialAppState: initialAppState(),
+      onChange: state => setState(state),
+      uri: webSocketUri(),
+    });
     return () => {
       client.close();
     };
