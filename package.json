@@ -1,6 +1,6 @@
 {
   "name": "simple-sync",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "scripts": {
     "prepare": "tsc",
     "watch": "tsc --watch"
