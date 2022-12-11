@@ -2,7 +2,7 @@
   "name": "simple-sync",
   "version": "0.1.0",
   "scripts": {
-    "prepare": "pwd && tsc",
+    "prepare": "pwd && ls && tsc && ls",
     "watch": "tsc --watch"
   },
   "devDependencies": {
