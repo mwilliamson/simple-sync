@@ -7,11 +7,23 @@ interface ServerOptions {
     webSocketPath: string;
 }
 
+type IncomingMessage =
+    | {type: "update", payload: unknown};
+
 export function listen({httpServer, webSocketPath}: ServerOptions) {
     const wss = new WebSocket.Server({noServer: true});
 
     let connections: Array<WebSocket.WebSocket> = [];
     const messages: Array<unknown> = [];
+
+    function receiveUpdate(update: unknown) {
+        const outgoingMessage = JSON.stringify({
+            index: messages.length,
+            payload: update,
+        });
+        messages.push(outgoingMessage);
+        connections.forEach((ws) => ws.send(outgoingMessage));
+    }
 
     wss.on("connection", function connection(ws) {
         connections.push(ws);
@@ -27,13 +39,13 @@ export function listen({httpServer, webSocketPath}: ServerOptions) {
             clearInterval(intervalId);
         });
 
-        ws.on("message", function incoming(payload) {
-            const message = JSON.stringify({
-                index: messages.length,
-                payload: JSON.parse(payload.toString("utf-8")),
-            });
-            messages.push(message);
-            connections.forEach((ws) => ws.send(message));
+        ws.on("message", function incoming(incomingMessageBinary) {
+            const incomingMessage: IncomingMessage = JSON.parse(incomingMessageBinary.toString("utf-8"));
+
+            switch (incomingMessage.type) {
+                case "update":
+                    receiveUpdate(incomingMessage.payload);
+            }
         });
     });
 

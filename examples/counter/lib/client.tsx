@@ -64,7 +64,7 @@ function Client() {
 }
 
 function sendUpdateToSocket(update: AppUpdate, socket: WebSocket) {
-    socket.send(JSON.stringify(update));
+    socket.send(JSON.stringify({type: "update", payload: update}));
 }
 
 interface CounterViewProps {
