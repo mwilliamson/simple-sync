@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom/client";
 
-import * as simpleSync from "../../../lib/client";
+import { useSimpleSync } from "../../../lib/react";
 
 type AppState = number;
 
@@ -29,24 +29,11 @@ function webSocketUri() {
 }
 
 function Client() {
-  const [state, setState] = useState<simpleSync.ClientState<AppState>>({type: "connecting"});
-  const client = useRef<simpleSync.Client<AppState, AppUpdate> | null>(null);
-
-  useEffect(() => {
-    client.current = simpleSync.connect({
-      applyAppUpdate,
-      initialAppState: initialAppState(),
-      onChange: state => setState(state),
-      uri: webSocketUri(),
-    });
-    return () => {
-      if (client.current !== null) {
-        client.current.close();
-      }
-    };
-  }, []);
-
-  const sendUpdate = client.current === null ? () => undefined : client.current.sendAppUpdate;
+  const state = useSimpleSync({
+    applyAppUpdate,
+    initialAppState: initialAppState(),
+    uri: webSocketUri(),
+  });
 
   switch (state.type) {
     case "connecting":
@@ -55,7 +42,7 @@ function Client() {
       );
     case "connected":
       return (
-        <CounterView sendUpdate={sendUpdate} state={state.appState} />
+        <CounterView sendUpdate={state.sendAppUpdate} state={state.appState} />
       );
     case "connection-error":
       return (

@@ -1,27 +1,31 @@
-export type ClientState<AppState> =
+export type ClientState<AppState, AppUpdate> =
   | {type: "connecting"}
-  | {type: "connected", appState: AppState, nextMessageIndex: number}
+  | {
+    type: "connected",
+    appState: AppState,
+    nextMessageIndex: number,
+    sendAppUpdate: (update: AppUpdate) => void,
+  }
   | {type: "connection-error"}
   | {type: "sync-error"};
 
-interface ConnectOptions<AppState, AppUpdate> {
+export interface ConnectOptions<AppState, AppUpdate> {
   applyAppUpdate: (state: AppState, update: AppUpdate) => AppState;
   initialAppState: AppState;
-  onChange: (state: ClientState<AppState>) => void;
+  onChange: (state: ClientState<AppState, AppUpdate>) => void;
   uri: string;
 }
 
 export interface Client<AppState, AppUpdate> {
   close: () => void;
-  sendAppUpdate: (update: AppUpdate) => void;
 }
 
 export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, AppUpdate>): Client<AppState, AppUpdate> {
   const {applyAppUpdate, initialAppState, onChange, uri} = options;
   const socket = new WebSocket(uri);
-  let state: ClientState<AppState> = {type: "connecting"};
+  let state: ClientState<AppState, AppUpdate> = {type: "connecting"};
 
-  function updateState(newState: ClientState<AppState>) {
+  function updateState(newState: ClientState<AppState, AppUpdate>) {
     state = newState;
     onChange(newState);
   }
@@ -59,15 +63,17 @@ export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, A
       type: "connected",
       appState: initialAppState,
       nextMessageIndex: 0,
+      sendAppUpdate,
     });
   };
+
+  function sendAppUpdate(update: AppUpdate) {
+    socket.send(JSON.stringify({type: "update", payload: update}));
+  }
 
   return {
     close: () => {
       socket.close();
     },
-    sendAppUpdate: (update: AppUpdate) => {
-      socket.send(JSON.stringify({type: "update", payload: update}));
-    }
-  }
+  };
 }
