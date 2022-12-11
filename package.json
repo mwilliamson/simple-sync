@@ -16,5 +16,11 @@
   "dependencies": {
     "uuid": "^9.0.0",
     "ws": "^8.11.0"
-  }
+  },
+  "files": [
+    "lib",
+    "public",
+    "src",
+    "tsconfig.json"
+  ]
 }
