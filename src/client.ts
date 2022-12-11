@@ -1,6 +1,6 @@
 export type ClientState<AppState> =
   | {type: "connecting"}
-  | {type: "connected", appState: AppState, nextMessageIndex: number, socket: WebSocket}
+  | {type: "connected", appState: AppState, nextMessageIndex: number}
   | {type: "connection-error"}
   | {type: "sync-error"};
 
@@ -11,7 +11,12 @@ interface ConnectOptions<AppState, AppUpdate> {
   uri: string;
 }
 
-export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, AppUpdate>) {
+export interface Client<AppState, AppUpdate> {
+  close: () => void;
+  sendAppUpdate: (update: AppUpdate) => void;
+}
+
+export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, AppUpdate>): Client<AppState, AppUpdate> {
   const {applyAppUpdate, initialAppState, onChange, uri} = options;
   const socket = new WebSocket(uri);
   let state: ClientState<AppState> = {type: "connecting"};
@@ -54,7 +59,6 @@ export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, A
       type: "connected",
       appState: initialAppState,
       nextMessageIndex: 0,
-      socket: socket,
     });
   };
 
@@ -62,5 +66,8 @@ export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, A
     close: () => {
       socket.close();
     },
+    sendAppUpdate: (update: AppUpdate) => {
+      socket.send(JSON.stringify({type: "update", payload: update}));
+    }
   }
 }
