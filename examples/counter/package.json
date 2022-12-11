@@ -1,6 +1,7 @@
 {
   "scripts": {
-    "build": "esbuild lib/client.tsx --bundle --outfile=public/bundle.js"
+    "build": "esbuild lib/client.tsx --bundle --outfile=public/bundle.js",
+    "watch": "npm run build -- --watch"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",
