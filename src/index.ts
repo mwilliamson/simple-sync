@@ -1,10 +1,11 @@
+import { WriteStream } from "fs";
 import { open } from "fs/promises";
 import http from "http";
 import url from "url";
 import WebSocket from "ws";
 
 interface ServerOptions {
-    eventLogPath: string;
+    eventLogPath?: string;
     httpServer: http.Server;
     webSocketPath: string;
 }
@@ -18,22 +19,28 @@ export async function listen({eventLogPath, httpServer, webSocketPath}: ServerOp
     let connections: Array<WebSocket.WebSocket> = [];
     const messages: Array<unknown> = [];
 
-    const eventLogFile = await open(eventLogPath, "a+");
+    let eventLogWriteStream: null | WriteStream = null;
 
-    for await (const line of eventLogFile.readLines({encoding: "utf-8", start: 0, autoClose: false})) {
-        messages.push(line);
+    if (eventLogPath !== undefined) {
+        const eventLogFile = await open(eventLogPath, "a+");
+
+        for await (const line of eventLogFile.readLines({encoding: "utf-8", start: 0, autoClose: false})) {
+            messages.push(line);
+        }
+
+        eventLogWriteStream = eventLogFile.createWriteStream({encoding: "utf-8"});
     }
-
-    const eventLogWriteStream = eventLogFile.createWriteStream({encoding: "utf-8"});
 
     function receiveUpdate(update: unknown) {
         const outgoingMessage = JSON.stringify({
             index: messages.length,
             payload: update,
         });
-        // TODO: error handling of event log
-        eventLogWriteStream.write(outgoingMessage);
-        eventLogWriteStream.write("\n");
+        if (eventLogWriteStream !== null) {
+            // TODO: error handling of event log
+            eventLogWriteStream.write(outgoingMessage);
+            eventLogWriteStream.write("\n");
+        }
         messages.push(outgoingMessage);
         connections.forEach((ws) => ws.send(outgoingMessage));
     }
