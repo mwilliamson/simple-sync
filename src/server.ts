@@ -3,14 +3,22 @@ import http from "http";
 
 import * as simpleSync from "./";
 
-const port = process.env.PORT || 8080;
+async function start() {
+    const port = process.env.PORT || 8080;
 
-const app = express();
-app.use("/", express.static(process.argv[2]));
-const httpServer = http.createServer(app);
+    const app = express();
+    app.use("/", express.static(process.argv[2]));
+    const httpServer = http.createServer(app);
 
-simpleSync.listen({httpServer, webSocketPath: "/ws"});
+    await simpleSync.listen({
+        eventLogPath: process.argv[3],
+        httpServer,
+        webSocketPath: "/ws",
+    });
 
-httpServer.listen(port);
+    httpServer.listen(port);
 
-console.log(`Serving on: 0.0.0.0:${port}`);
+    console.log(`Serving on: 0.0.0.0:${port}`);
+}
+
+start();

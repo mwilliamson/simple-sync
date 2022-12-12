@@ -1,8 +1,10 @@
+import { open } from "fs/promises";
 import http from "http";
 import url from "url";
 import WebSocket from "ws";
 
 interface ServerOptions {
+    eventLogPath: string;
     httpServer: http.Server;
     webSocketPath: string;
 }
@@ -10,17 +12,28 @@ interface ServerOptions {
 type IncomingMessage =
     | {type: "update", payload: unknown};
 
-export function listen({httpServer, webSocketPath}: ServerOptions) {
+export async function listen({eventLogPath, httpServer, webSocketPath}: ServerOptions) {
     const wss = new WebSocket.Server({noServer: true});
 
     let connections: Array<WebSocket.WebSocket> = [];
     const messages: Array<unknown> = [];
+
+    const eventLogFile = await open(eventLogPath, "a+");
+
+    for await (const line of eventLogFile.readLines({encoding: "utf-8", start: 0, autoClose: false})) {
+        messages.push(line);
+    }
+
+    const eventLogWriteStream = eventLogFile.createWriteStream({encoding: "utf-8"});
 
     function receiveUpdate(update: unknown) {
         const outgoingMessage = JSON.stringify({
             index: messages.length,
             payload: update,
         });
+        // TODO: error handling of event log
+        eventLogWriteStream.write(outgoingMessage);
+        eventLogWriteStream.write("\n");
         messages.push(outgoingMessage);
         connections.forEach((ws) => ws.send(outgoingMessage));
     }
