@@ -14,6 +14,9 @@ export interface ConnectOptions<AppState, AppUpdate> {
   initialAppState: AppState;
   onChange: (state: ClientState<AppState, AppUpdate>) => void;
   uri: string;
+
+  serializeAppUpdate: (update: AppUpdate) => unknown;
+  deserializeAppUpdate: (update: unknown) => AppUpdate;
 }
 
 export interface Client<AppState, AppUpdate> {
@@ -21,7 +24,7 @@ export interface Client<AppState, AppUpdate> {
 }
 
 export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, AppUpdate>): Client<AppState, AppUpdate> {
-  const {applyAppUpdate, initialAppState, onChange, uri} = options;
+  const {applyAppUpdate, initialAppState, onChange, uri, serializeAppUpdate, deserializeAppUpdate} = options;
   const socket = new WebSocket(uri);
   let state: ClientState<AppState, AppUpdate> = {type: "connecting"};
 
@@ -39,7 +42,7 @@ export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, A
           updateState({type: "sync-error"});
           socket.close();
       } else {
-        const appUpdate = message.payload as AppUpdate;
+        const appUpdate = deserializeAppUpdate(message.payload);
 
         updateState({
           ...state,
@@ -68,7 +71,7 @@ export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, A
   };
 
   function sendAppUpdate(update: AppUpdate) {
-    socket.send(JSON.stringify({type: "update", payload: update}));
+    socket.send(JSON.stringify({type: "update", payload: serializeAppUpdate(update)}));
   }
 
   return {

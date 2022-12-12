@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { Client, ClientState, connect, ConnectOptions } from "./client";
 
-export function useSimpleSync<AppState, AppUpdate>(options: Pick<ConnectOptions<AppState, AppUpdate>, "applyAppUpdate" | "initialAppState" | "uri">) {
+export function useSimpleSync<AppState, AppUpdate>(options: Omit<ConnectOptions<AppState, AppUpdate>, "onChange">) {
     const [state, setState] = useState<ClientState<AppState, AppUpdate>>({type: "connecting"});
 
     const client = useRef<Client<AppState, AppUpdate> | null>(null);

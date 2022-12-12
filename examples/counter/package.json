@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "build": "esbuild lib/client.tsx --bundle --outfile=public/bundle.js",
+    "build": "esbuild src/client.tsx --bundle --outfile=public/bundle.js",
     "watch": "npm run build -- --watch",
     "check": "tsc"
   }

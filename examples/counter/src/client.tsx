@@ -33,6 +33,9 @@ function Client() {
     applyAppUpdate,
     initialAppState: initialAppState(),
     uri: webSocketUri(),
+
+    serializeAppUpdate: x => x,
+    deserializeAppUpdate: x => x as AppUpdate,
   });
 
   switch (state.type) {
