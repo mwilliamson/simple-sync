@@ -5,6 +5,7 @@ import * as simpleSync from "./";
 
 async function start() {
     const port = process.env.PORT || 8080;
+    const webSocketPath = process.env.WEBSOCKET_PATH || "/ws";
 
     const app = express();
     app.use("/", express.static(process.argv[2]));
@@ -13,7 +14,7 @@ async function start() {
     await simpleSync.listen({
         eventLogPath: process.argv[3],
         httpServer,
-        webSocketPath: "/ws",
+        webSocketPath: webSocketPath,
     });
 
     httpServer.listen(port);
