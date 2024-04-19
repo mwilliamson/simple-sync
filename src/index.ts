@@ -25,7 +25,9 @@ export async function listen({eventLogPath, httpServer, webSocketPath}: ServerOp
         const eventLogFile = await open(eventLogPath, "a+");
 
         for await (const line of eventLogFile.readLines({encoding: "utf-8", start: 0, autoClose: false})) {
-            messages.push(line);
+            const message = JSON.parse(line);
+            message.index = messages.length;
+            messages.push(JSON.stringify(message));
         }
 
         eventLogWriteStream = eventLogFile.createWriteStream({encoding: "utf-8"});
@@ -38,7 +40,7 @@ export async function listen({eventLogPath, httpServer, webSocketPath}: ServerOp
         });
         if (eventLogWriteStream !== null) {
             // TODO: error handling of event log
-            eventLogWriteStream.write(outgoingMessage);
+            eventLogWriteStream.write(JSON.stringify({payload: update}));
             eventLogWriteStream.write("\n");
         }
         messages.push(outgoingMessage);
