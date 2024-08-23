@@ -1,3 +1,5 @@
+import WebSocket from "isomorphic-ws";
+
 export type ClientState<AppState, AppUpdate> =
   | {type: "connecting"}
   | {
@@ -34,7 +36,7 @@ export function connect<AppState, AppUpdate>(options: ConnectOptions<AppState, A
   }
 
   socket.onmessage = function (event) {
-    if (state.type === "connected") {
+    if (state.type === "connected" && typeof event.data === "string") {
       const message = JSON.parse(event.data);
 
       const nextMessageIndex = state.nextMessageIndex;

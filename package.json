@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@types/react-dom": "^18.0.9",
+    "isomorphic-ws": "^5.0.0",
     "uuid": "^9.0.0",
     "ws": "^8.11.0"
   },
